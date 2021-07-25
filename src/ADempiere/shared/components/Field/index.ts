@@ -6,9 +6,7 @@ import {
 } from '../../utils/DictionaryUtils'
 import { PanelContextType } from '../../utils/DictionaryUtils/ContextMenuType'
 import {
-  DEFAULT_SIZE,
-  IFieldReferencesType,
-  ISizeData
+  IFieldReferencesType
 } from '../../utils/references'
 import { Namespaces } from '../../utils/types'
 import { isEmptyValue, recursiveTreeSearch } from '@/ADempiere/shared/utils/valueUtils'
