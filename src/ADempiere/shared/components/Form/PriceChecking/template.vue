@@ -17,6 +17,7 @@
         >
           <field
             v-for="field in fieldsList"
+            id="ProductValue"
             ref="ProductValue"
             :key="field.columnName"
             :metadata-field="field"
@@ -108,6 +109,7 @@
   width: 100%;
   height: 100%;
   float: inherit;
+  background: white;
   // color: white;
   // opacity: 0.5;
 }

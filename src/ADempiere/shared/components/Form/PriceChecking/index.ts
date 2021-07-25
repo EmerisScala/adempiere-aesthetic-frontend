@@ -3,9 +3,7 @@ import MixinForm from '../MixinForm'
 import fieldList from './fieldList'
 import Template from './template.vue'
 
-import { requestImage } from '@/ADempiere/modules/persistence/PersistenceService/persistence'
-import { buildImageFromArrayBuffer } from '@/ADempiere/shared/utils/resource'
-import { AxiosResponse } from 'axios'
+import { getImagePath } from '@/ADempiere/shared/utils/resource'
 import { getProductPrice } from '@/ADempiere/modules/core/CoreService'
 import {
   formatPercent,
@@ -30,7 +28,7 @@ export default class PriceChecking extends Mixins(MixinForm) {
   public currentImageOfProduct = ''
   public search = 'sad'
   public resul = ''
-  public load = ''
+  public backgroundForm = ''
   // eslint-disable-next-line
   public unsubscribe: Function = () => {}
   public timeOut?: NodeJS.Timeout
@@ -44,53 +42,12 @@ export default class PriceChecking extends Mixins(MixinForm) {
     return require('@/image/ADempiere/priceChecking/no-image.jpg')
   }
 
-  get backgroundForm(): string {
-    if (!this.organizationImagePath) {
-      return this.defaultImage
-    }
-    if (!this.currentImageOfProduct) {
-      return this.organizationBackground
-    }
-    return this.currentImageOfProduct
-  }
-
   get currentPoint(): IPointOfSalesData | undefined {
     return this.$store.getters[Namespaces.PointOfSales + '/' + 'posAttributes']
       .currentPointOfSales
   }
 
   // Methods
-  async getImage(imageName?: string): Promise<string> {
-    imageName = imageName || ''
-    let isSetOrg = false
-    if (!imageName) {
-      if (this.organizationBackground) {
-        return this.organizationBackground
-      }
-      isSetOrg = true
-      imageName = this.organizationImagePath
-    }
-    // the name of the image plus the height of the container is sent
-    const imageBuffer = await requestImage({
-      file: imageName,
-      width: 750,
-      height: 380
-    }).then((responseImage: AxiosResponse) => {
-      const arrayBufferAsImage = buildImageFromArrayBuffer({
-        arrayBuffer: responseImage.data
-      })
-
-      if (isSetOrg) {
-        this.organizationBackground = arrayBufferAsImage
-        return arrayBufferAsImage
-      }
-
-      this.currentImageOfProduct = arrayBufferAsImage
-      return arrayBufferAsImage
-    })
-    return imageBuffer
-  }
-
   focusProductValue(): void {
     if (this.ProductValue && this.ProductValue[0]) {
       this.ProductValue[0].focus()
@@ -179,7 +136,7 @@ export default class PriceChecking extends Mixins(MixinForm) {
               this.search = ''
               this.currentImageOfProduct = ''
               if (isEmptyValue(this.productPrice.image)) {
-                this.getImage(this.productPrice.image)
+                this.getImageFromSource(this.productPrice.image)
               }
             })
         }
@@ -251,7 +208,7 @@ export default class PriceChecking extends Mixins(MixinForm) {
               this.search = ''
               this.currentImageOfProduct = ''
               if (!this.productPrice.image) {
-                this.getImage(this.productPrice.image)
+                this.getImageFromSource(this.productPrice.image)
               }
             })
         }, 500)
@@ -282,16 +239,27 @@ export default class PriceChecking extends Mixins(MixinForm) {
     return basePrice + this.getTaxAmount(basePrice, taxRate)
   }
 
+  getImageFromSource(fileName: string) {
+    if (isEmptyValue(fileName)) {
+      return this.defaultImage
+    }
+    const image = getImagePath({
+      file: fileName,
+      width: 250,
+      height: 280
+    })
+    this.backgroundForm = image.uri
+  }
+
   // Hooks
   created() {
-    this.$store.dispatch(
-      Namespaces.PointOfSales + '/' + 'listPointOfSalesFromServer'
-    )
     this.unsubscribe = this.subscribeChanges()
   }
 
   mounted() {
-    this.getImage()
+    this.backgroundForm = this.defaultImage
+    this.getImageFromSource(this.organizationImagePath)
+    this.$store.dispatch(Namespaces.PointOfSales + '/' + 'listPointOfSalesFromServer')
   }
 
   beforeDestroy() {
